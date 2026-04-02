@@ -22,7 +22,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             binutils-arm-none-eabi \
-            gcc-arm-none-eabi
+            gcc-arm-none-eabi \
+            libnewlib-arm-none-eabi
 
       - name: Run unit tests
         run: python3 -m unittest discover -s tests -p 'test_make_fat16_image.py'
