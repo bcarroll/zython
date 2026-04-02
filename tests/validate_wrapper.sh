@@ -48,7 +48,7 @@ grep -q 'git -C "\$(UPSTREAM_DIR)" apply' "$project_dir/Makefile"
 grep -q 'git -C "\$(UPSTREAM_MICROPYTHON_DIR)" apply' "$project_dir/Makefile"
 grep -q 'bootcode.bin' "$project_dir/Makefile"
 grep -q 'start.elf' "$project_dir/Makefile"
-grep -q 'rpi_zero_micropython-sdcard.img' "$project_dir/README.md"
+grep -q 'zython.img' "$project_dir/README.md"
 grep -q 'raspberrypi' "$project_dir/vendor/README.md"
 test -d "$port_dir/fs"
 

@@ -26,16 +26,21 @@ What those targets do:
 
 - `make all`: clones `vendor/micropython` if needed, initializes pinned submodules, applies the local patch series, and builds the firmware
 - `make stage-sdcard`: writes boot files to `build/sdcard/`
-- `make release`: creates `build/rpi_zero_micropython-sdcard.img`
+- `make release`: creates `build/zython.img`
 - `make clean`: removes `build/` and deletes `vendor/micropython`
 
 ## Output
 
 - Firmware build output: `vendor/micropython/raspberrypi/build/`
 - Staged SD card files: `build/sdcard/`
-- Raw disk image: `build/rpi_zero_micropython-sdcard.img`
+- Raw disk image: `build/zython.img`
 
 The release image is a raw disk image with an MBR and one FAT16 boot partition, suitable for SD card imaging tools.
+
+## GitHub Actions
+
+- `.github/workflows/ci.yml` runs the unit test and `make all` on pushes to `main` and on pull requests
+- `.github/workflows/release.yml` runs `make release` and publishes `build/zython.img` to a GitHub release when you push a tag like `v1.0.0`
 
 ## Boot Files
 
