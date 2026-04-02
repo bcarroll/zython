@@ -1,14 +1,6 @@
 # Raspberry Pi Zero Bare-Metal MicroPython
 
-This repository is a thin wrapper around the upstream bare-metal Raspberry Pi MicroPython port at `vendor/micropython/raspberrypi`. It targets Raspberry Pi Zero and Zero W boards by building that upstream port with `BOARD=RPI1`.
-
-## Layout
-
-- `vendor/micropython/raspberrypi/`: the actual bare-metal MicroPython port and source tree.
-- `Makefile`: top-level wrapper that forwards build settings to the upstream port.
-- `tests/validate_wrapper.sh`: checks that the wrapper points at a usable upstream port.
-
-The top level intentionally does not maintain its own duplicate startup code, linker script, HAL, or port configuration.
+Thin wrapper around the upstream Raspberry Pi bare-metal MicroPython port in `vendor/micropython/raspberrypi`, targeting Raspberry Pi Zero and Zero W with `BOARD=RPI1`.
 
 ## Prerequisites
 
@@ -19,101 +11,48 @@ The top level intentionally does not maintain its own duplicate startup code, li
 - `curl`
 - `make`
 
-If `vendor/micropython` is missing, the wrapper can bootstrap it from:
-
-```text
-https://github.com/boochow/micropython-raspberrypi.git
-```
-
-and then initialize the submodules required by the upstream README in both:
-
-```text
-vendor/micropython
-vendor/micropython/micropython
-```
-
-After cloning and submodule setup, the wrapper also applies this repository's local patch series from `patches/upstream-micropython/` so the vendored tree matches the expected GCC compatibility and performance profile.
-
-The submodule initialization step does not fetch the latest upstream MicroPython `HEAD`. It checks out the exact submodule commits pinned by the cloned `boochow/micropython-raspberrypi` repository at that point in time.
-
-## Build
+## Quick Start
 
 Run from the repository root:
 
 ```sh
-make bootstrap-upstream
 make validate
 make all
 make stage-sdcard
 make release
 ```
 
-`make all` and `make stage-sdcard` automatically run the bootstrap, submodule, and patch-apply steps first, so a fresh checkout does not need a separate manual clone.
+What those targets do:
 
-`make clean` removes `build/` and deletes `vendor/micropython`, which clears the vendored upstream checkout and any locally applied patch state. The next `make all` will reclone and reapply the patch series.
+- `make all`: clones `vendor/micropython` if needed, initializes pinned submodules, applies the local patch series, and builds the firmware
+- `make stage-sdcard`: writes boot files to `build/sdcard/`
+- `make release`: creates `build/rpi_zero_micropython-sdcard.img`
+- `make clean`: removes `build/` and deletes `vendor/micropython`
 
-Because `vendor/micropython` is a bootstrapped checkout, it is ignored by the top-level `.gitignore`. The source of truth for local upstream changes is the patch series under `patches/upstream-micropython/`, not the cloned vendor tree itself.
+## Output
 
-The wrapper defaults to Raspberry Pi Zero-compatible settings:
+- Firmware build output: `vendor/micropython/raspberrypi/build/`
+- Staged SD card files: `build/sdcard/`
+- Raw disk image: `build/rpi_zero_micropython-sdcard.img`
 
-```sh
-make BOARD=RPI1 PERF=1 MICROPY_HW_USBHOST=0 MICROPY_MOUNT_SD_CARD=1 MICROPY_MOUNT_FIRST_PARTITION_ONLY=1 MICROPY_BOOT_FROZEN_MPY=1
-```
+The release image is a raw disk image with an MBR and one FAT16 boot partition, suitable for SD card imaging tools.
 
-`make all` delegates to:
+## Boot Files
 
-```text
-vendor/micropython/raspberrypi
-```
+Copy these to the FAT boot partition if you are not using `make release`:
 
-and produces upstream artifacts in:
-
-```text
-vendor/micropython/raspberrypi/build/
-```
-
-The wrapper staging target copies the boot files into:
-
-```text
-build/sdcard/
-```
-
-The release target writes a raw disk image to:
-
-```text
-build/rpi_zero_micropython-sdcard.img
-```
-
-That image contains an MBR and a single FAT16 partition built from the current contents of `build/sdcard/`, so it can be handed directly to SD card imaging tools.
-
-During `make stage-sdcard`, the wrapper also downloads:
-
-- `bootcode.bin`
-- `start.elf`
-
-from the Raspberry Pi firmware repository and stores them in `build/sdcard/`.
-If those files are already present in `build/sdcard/`, the wrapper reuses them instead of downloading them again.
-
-## Boot files
-
-For SD card staging, copy these onto the FAT boot partition:
-
-- Raspberry Pi firmware files required by the board
 - `build/sdcard/config.txt`
 - `build/sdcard/firmware.img`
 - `build/sdcard/bootcode.bin`
 - `build/sdcard/start.elf`
-- any files from `vendor/micropython/raspberrypi/fs/` you want available on the mounted SD card
+- any files you want from `vendor/micropython/raspberrypi/fs/`
 
-For `make release`, non-8.3 filenames are stored using FAT short-name aliases inside the generated image.
-
-The runtime remains bare-metal after the Raspberry Pi firmware loads `firmware.img`; Linux is not involved.
+The runtime is bare-metal after the Raspberry Pi firmware loads `firmware.img`; Linux is not involved.
 
 ## Notes
 
-- Raspberry Pi Zero and Zero W use `BOARD=RPI1`.
-- Raspberry Pi Zero 2 W is a different board class and should not use these defaults blindly.
-- `PERF=1` switches the upstream port from `-Os` to a faster `-O2` build profile.
-- `MICROPY_MOUNT_FIRST_PARTITION_ONLY=1` avoids probing all four partition slots during boot.
-- `MICROPY_BOOT_FROZEN_MPY=1` freezes `vendor/micropython/raspberrypi/fs/boot.py` and `main.py` as `.mpy` and lets `pyexec_file_if_exists()` use the frozen versions first.
-- USB host support is opt-in in the wrapper because it adds startup cost and is not needed for a UART-first Pi Zero bring-up.
+- `vendor/micropython` is a generated checkout and is ignored by `.gitignore`
+- the nested `micropython` submodule is checked out to the commit pinned by `boochow/micropython-raspberrypi`, not the latest upstream `HEAD`
+- local upstream-facing changes are captured in `patches/upstream-micropython/`
+- default wrapper settings are `BOARD=RPI1 PERF=1 MICROPY_HW_USBHOST=0 MICROPY_MOUNT_SD_CARD=1 MICROPY_MOUNT_FIRST_PARTITION_ONLY=1 MICROPY_BOOT_FROZEN_MPY=1`
+- Raspberry Pi Zero 2 W is a different board class and should not use these defaults blindly
