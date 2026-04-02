@@ -1,0 +1,24 @@
+diff --git a/mpy-cross/Makefile b/mpy-cross/Makefile
+--- a/mpy-cross/Makefile
++++ b/mpy-cross/Makefile
+@@ -75,4 +75,8 @@ endif
+ OBJ = $(PY_CORE_O)
+ OBJ += $(addprefix $(BUILD)/, $(SRC_C:.c=.o))
+ 
++# GCC 13's dangling-pointer analysis flags MicroPython's intentional stack-top
++# capture in py/stackctrl.c. Keep the warning enabled elsewhere.
++$(BUILD)/py/stackctrl.o: CFLAGS += -Wno-error=dangling-pointer
++
+ include $(TOP)/py/mkrules.mk
+diff --git a/mpy-cross/main.c b/mpy-cross/main.c
+--- a/mpy-cross/main.c
++++ b/mpy-cross/main.c
+@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
+     return main_(argc, argv);
+ }
+ 
+-uint mp_import_stat(const char *path) {
++mp_import_stat_t mp_import_stat(const char *path) {
+     (void)path;
+     return MP_IMPORT_STAT_NO_EXIST;
+ }

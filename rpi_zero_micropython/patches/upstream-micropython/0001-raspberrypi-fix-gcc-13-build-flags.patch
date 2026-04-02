@@ -1,0 +1,71 @@
+diff --git a/raspberrypi/Makefile b/raspberrypi/Makefile
+index dce027f..dca7fa9 100644
+--- a/raspberrypi/Makefile
++++ b/raspberrypi/Makefile
+@@ -40,6 +40,7 @@ endif
+ 
+ CFLAGS_RPI += $(CFLAGS_FPU) -fsingle-precision-constant -Wdouble-promotion
+ CFLAGS = $(INC) $(CWARN) -std=c99 -nostdlib $(CFLAGS_RPI) $(CFLAGS_MOD) 
++QSTR_GEN_EXTRA_CFLAGS += -mgeneral-regs-only
+ 
+ ASFLAGS += $(CFLAGS_FPU)
+ 
+@@ -166,6 +167,21 @@ SRC_QSTR += $(SRC_C) $(SRC_MOD) $(SRC_LIB)
+ 
+ OBJ = $(PY_O) $(addprefix $(BUILD)/, $(SRC_C:.c=.o) $(SRC_MOD:.c=.o) $(SRC_S:.s=.o) $(SRC_LIB:.c=.o))
+ 
++# GCC 13+ rejects ARM interrupt handlers under hard-float unless the affected
++# translation units are compiled without FP register use.
++INTERRUPT_SAFE_OBJECTS := \
++	$(BUILD)/main.o \
++	$(BUILD)/modmachine.o \
++	$(BUILD)/rpi.o \
++	$(BUILD)/arm_exceptions.o \
++	$(BUILD)/arm_ex_handler_weak.o
++
++$(INTERRUPT_SAFE_OBJECTS): CFLAGS += -mgeneral-regs-only
++
++# GCC 13's dangling-pointer analysis flags MicroPython's intentional stack-top
++# capture in py/stackctrl.c. Keep the warning enabled elsewhere.
++$(BUILD)/py/stackctrl.o: CFLAGS += -Wno-error=dangling-pointer
++
+ 
+ ifneq ($(FROZEN_DIR),)
+ # To use frozen source modules, put your .py files in a subdirectory (eg scripts/)
+diff --git a/raspberrypi/mpconfigport.h b/raspberrypi/mpconfigport.h
+index 514073e..0c019b0 100644
+--- a/raspberrypi/mpconfigport.h
++++ b/raspberrypi/mpconfigport.h
+@@ -1,5 +1,4 @@
+ #include <stdint.h>
+-#include "arm_exceptions.h"
+ #include "usbhost.h"
+ 
+ // options to control how MicroPython is built
+@@ -167,11 +166,24 @@ extern const struct _mp_obj_module_t mp_module_uos;
+ // bit 7 of CPSR so we do not need to save/restore irq flags state.
+ 
+ __attribute__(( always_inline )) static inline void enable_irq(mp_uint_t state) {
+-    arm_irq_enable();
++    (void)state;
++    __asm volatile(
++        "mrs r0, cpsr \n"
++        "bic r0, r0, #0x80 \n"
++        "msr cpsr_c, r0 \n"
++        :
++        :
++        : "r0", "memory");
+ }
+ 
+ __attribute__(( always_inline )) static inline mp_uint_t disable_irq(void) {
+-    arm_irq_disable();
++    __asm volatile(
++        "mrs r0, cpsr \n"
++        "orr r0, r0, #0x80 \n"
++        "msr cpsr_c, r0 \n"
++        :
++        :
++        : "r0", "memory");
+     return 0x80;
+ }
+ 

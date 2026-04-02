@@ -1,0 +1,23 @@
+diff --git a/raspberrypi/arm_ex_handler_weak.c b/raspberrypi/arm_ex_handler_weak.c
+index e6b7ffb..c12c04b 100644
+--- a/raspberrypi/arm_ex_handler_weak.c
++++ b/raspberrypi/arm_ex_handler_weak.c
+@@ -10,6 +10,5 @@ void __attribute__((weak, interrupt("ABORT"))) abort_handler(void) {
+ void __attribute__((weak, interrupt("IRQ"))) irq_handler(void) {
+ }
+ 
+-void __attribute__((weak, interrupt("IRQ"))) fiq_handler(void) {
++void __attribute__((weak, interrupt("FIQ"))) fiq_handler(void) {
+ }
+-
+diff --git a/raspberrypi/mpconfigport.h b/raspberrypi/mpconfigport.h
+index 0c019b0..7079500 100644
+--- a/raspberrypi/mpconfigport.h
++++ b/raspberrypi/mpconfigport.h
+@@ -207,5 +207,4 @@ __attribute__(( always_inline )) static inline mp_uint_t disable_irq(void) {
+ 
+ #define MICROPY_PORT_ROOT_POINTERS \
+     const char *readline_hist[8]; \
+-    hcd_globals_t *hcd_globals; \
+-
++    hcd_globals_t *hcd_globals;
