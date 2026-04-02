@@ -1,6 +1,6 @@
 # Raspberry Pi Zero Bare-Metal MicroPython
 
-This directory is a thin wrapper around the upstream bare-metal Raspberry Pi MicroPython port at `vendor/micropython/raspberrypi`. It targets Raspberry Pi Zero and Zero W boards by building that upstream port with `BOARD=RPI1`.
+This repository is a thin wrapper around the upstream bare-metal Raspberry Pi MicroPython port at `vendor/micropython/raspberrypi`. It targets Raspberry Pi Zero and Zero W boards by building that upstream port with `BOARD=RPI1`.
 
 ## Layout
 
@@ -38,7 +38,7 @@ The submodule initialization step does not fetch the latest upstream MicroPython
 
 ## Build
 
-Run from `rpi_zero_micropython/`:
+Run from the repository root:
 
 ```sh
 make bootstrap-upstream
