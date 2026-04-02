@@ -4,3 +4,4 @@ __pycache__/
 rpi_zero_micropython/build/
 rpi_zero_micropython/vendor/micropython/
 rpi_zero_micropython/vendor/micropython/raspberrypi/build/
+.codex
