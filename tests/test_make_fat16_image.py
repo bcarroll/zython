@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import struct
+import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from tools.make_fat16_image import create_image
+from tools.make_fat16_image import create_image, main
 
 
 def read_root_entries(image_bytes: bytes, partition_lba: int) -> list[bytes]:
@@ -78,6 +80,33 @@ class MakeFat16ImageTests(unittest.TestCase):
         partition_lba = struct.unpack_from("<I", image_bytes, 454)[0]
         root_names = {entry[:11] for entry in read_root_entries(image_bytes, partition_lba)}
         self.assertIn(b"VERYLO~1TXT", root_names)
+
+    def test_main_creates_config_and_cmdline_when_missing(self) -> None:
+        """Run the CLI path and confirm missing boot files are generated."""
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            source_dir = Path(temp_dir) / "sdcard"
+            source_dir.mkdir()
+            output_path = Path(temp_dir) / "release.img"
+            argv = [
+                "make_fat16_image.py",
+                "--source",
+                str(source_dir),
+                "--output",
+                str(output_path),
+                "--size-mb",
+                "16",
+                "--volume-label",
+                "RPI_MICROPY",
+            ]
+            with patch.object(sys, "argv", argv):
+                result = main()
+
+            self.assertEqual(result, 0)
+            self.assertTrue((source_dir / "config.txt").is_file())
+            self.assertTrue((source_dir / "cmdline.txt").is_file())
+            self.assertEqual((source_dir / "cmdline.txt").read_text(), "modules=dwc2,g_serial")
+            self.assertTrue(output_path.is_file())
 
 
 if __name__ == "__main__":
