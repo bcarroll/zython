@@ -1,0 +1,29 @@
+# Raspberry Pi Zero W bare-metal MicroPython boot configuration
+# Kernel to load
+kernel=firmware.img
+
+# GPU memory allocation (128MB recommended for Pi Zero W)
+gpu_mem=128
+
+# ARM memory split - give most to the ARM CPU
+arm_mem=896
+
+# Serial/UART configuration for console output
+enable_uart=1
+uart_2ndstage=1
+bootcode_delay=0
+
+# USB device mode (enable dwc2 for USB serial gadget on micro USB port)
+dtoverlay=dwc2
+
+# Disable splash screen
+disable_splash=1
+
+# HDMI configuration for safe mode
+hdmi_safe=1
+
+# Disable overscan
+disable_overscan=1
+
+# Mailbox timeout (increase for stability)
+mailbox_timeout=100

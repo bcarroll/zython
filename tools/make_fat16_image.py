@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import math
 import os
 import struct
@@ -53,6 +54,7 @@ class FatLayout:
 
 
 def parse_args() -> argparse.Namespace:
+
     """Parse command-line arguments for the image builder."""
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -455,6 +457,19 @@ def main() -> int:
     """Run the command-line entry point."""
 
     args = parse_args()
+
+    # Ensure a config.txt exists on the boot partition.
+    # This prevents the Pi Zero W rainbow screen by providing required firmware settings.
+    cfg_path = Path(args.source) / "config.txt"
+    if not cfg_path.is_file():
+        tmpl = Path(__file__).with_name("config_template.txt")
+        shutil.copy2(tmpl, cfg_path)
+    
+    # Ensure cmdline.txt exists with USB gadget serial support
+    cmdline_path = Path(args.source) / "cmdline.txt"
+    if not cmdline_path.is_file():
+        cmdline_path.write_text("modules=dwc2,g_serial")
+    
     create_image(
         source_dir=Path(args.source),
         output_path=Path(args.output),

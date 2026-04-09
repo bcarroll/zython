@@ -9,6 +9,7 @@ required_files='
 Makefile
 README.md
 tools/make_fat16_image.py
+tools/config_template.txt
 tests/test_make_fat16_image.py
 vendor/README.md
 vendor/micropython/README.md
@@ -25,6 +26,9 @@ vendor/micropython/raspberrypi/kernel.ld
 for file in $required_files; do
     if [ ! -f "$project_dir/$file" ]; then
         printf 'Missing required file: %s\n' "$file" >&2
+        case $file in vendor/*)
+            printf 'Hint: Run "make bootstrap-upstream" to clone the upstream port and initialize submodules.\n' >&2
+        esac
         exit 1
     fi
 done

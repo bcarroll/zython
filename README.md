@@ -61,3 +61,9 @@ The runtime is bare-metal after the Raspberry Pi firmware loads `firmware.img`; 
 - local upstream-facing changes are captured in `patches/upstream-micropython/`
 - default wrapper settings are `BOARD=RPI1 PERF=1 MICROPY_HW_USBHOST=0 MICROPY_MOUNT_SD_CARD=1 MICROPY_MOUNT_FIRST_PARTITION_ONLY=1 MICROPY_BOOT_FROZEN_MPY=1`
 - Raspberry Pi Zero 2 W is a different board class and should not use these defaults blindly
+
+## License
+
+This repository is licensed under the MIT License. A root `LICENSE` file is included in the project root.
+
+The vendor submodule contents under `vendor/micropython/` are external upstream sources and retain their own license notices. See the license files within `vendor/micropython/` for details.

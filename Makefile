@@ -12,6 +12,7 @@ PATCH_DIR ?= $(PROJECT_DIR)/patches/upstream-micropython
 UPSTREAM_GIT_URL ?= https://github.com/boochow/micropython-raspberrypi.git
 RPI_FIRMWARE_BOOTCODE_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin
 RPI_FIRMWARE_START_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start.elf
+RPI_FIRMWARE_FIXUP_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup.dat
 
 UPSTREAM_PATCHES := \
 	0001-raspberrypi-fix-gcc-13-build-flags.patch \
@@ -146,6 +147,7 @@ stage-sdcard: upstream-build
 	@mkdir -p "$(SDCARD_DIR)"
 	@cp "$(PORT_DIR)/build/config.txt" "$(SDCARD_DIR)/config.txt"
 	@cp "$(PORT_DIR)/build/firmware.img" "$(SDCARD_DIR)/firmware.img"
+	@cp "$(PROJECT_DIR)/tools/config_template.txt" "$(SDCARD_DIR)/config.txt"
 	@if [ -f "$(SDCARD_DIR)/bootcode.bin" ]; then \
 		printf '%s\n' "Using existing $(SDCARD_DIR)/bootcode.bin"; \
 	else \
@@ -155,6 +157,11 @@ stage-sdcard: upstream-build
 		printf '%s\n' "Using existing $(SDCARD_DIR)/start.elf"; \
 	else \
 		curl -fL "$(RPI_FIRMWARE_START_URL)" -o "$(SDCARD_DIR)/start.elf"; \
+	fi
+	@if [ -f "$(SDCARD_DIR)/fixup.dat" ]; then \
+		printf '%s\n' "Using existing $(SDCARD_DIR)/fixup.dat"; \
+	else \
+		curl -fL "$(RPI_FIRMWARE_FIXUP_URL)" -o "$(SDCARD_DIR)/fixup.dat"; \
 	fi
 	@printf '%s\n' "Staged boot files in $(SDCARD_DIR)"
 
