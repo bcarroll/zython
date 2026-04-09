@@ -25,7 +25,7 @@ make release
 What those targets do:
 
 - `make all`: clones `vendor/micropython` if needed, initializes pinned submodules, applies the local patch series, and builds the firmware
-- `make stage-sdcard`: writes boot files to `build/sdcard/`, adds `enable_uart=1` to `config.txt`, and stages the matching Raspberry Pi firmware blobs
+- `make stage-sdcard`: writes boot files to `build/sdcard/`, adds `enable_uart=1` plus conservative HDMI settings to `config.txt`, and stages the matching Raspberry Pi firmware blobs
 - `make release`: creates `build/zython.img`
 - `make clean`: removes `build/` and deletes `vendor/micropython`
 
@@ -62,4 +62,5 @@ The runtime is bare-metal after the Raspberry Pi firmware loads `firmware.img`; 
 - local upstream-facing changes are captured in `patches/upstream-micropython/`
 - default wrapper settings are `BOARD=RPI1 PERF=1 MICROPY_HW_USBHOST=0 MICROPY_MOUNT_SD_CARD=1 MICROPY_MOUNT_FIRST_PARTITION_ONLY=1 MICROPY_BOOT_FROZEN_MPY=1`
 - `make stage-sdcard` appends `enable_uart=1` to the staged `config.txt` so the serial console is exposed on the Pi Zero UART pins
+- `make stage-sdcard` also appends `hdmi_force_hotplug=1`, `hdmi_group=2`, `hdmi_mode=4`, and `disable_overscan=1` to favor a conservative 640x480 HDMI mode that is broadly compatible for early bring-up
 - Raspberry Pi Zero 2 W is a different board class and should not use these defaults blindly
