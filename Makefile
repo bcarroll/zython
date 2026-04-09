@@ -11,6 +11,7 @@ RELEASE_VOLUME_LABEL ?= RPI_MICROPY
 PATCH_DIR ?= $(PROJECT_DIR)/patches/upstream-micropython
 UPSTREAM_GIT_URL ?= https://github.com/boochow/micropython-raspberrypi.git
 RPI_FIRMWARE_BOOTCODE_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin
+RPI_FIRMWARE_FIXUP_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup.dat
 RPI_FIRMWARE_START_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start.elf
 
 UPSTREAM_PATCHES := \
@@ -42,7 +43,7 @@ help:
 		'  make apply-upstream-patches Apply this repo'"'"'s local upstream patch series if needed.' \
 		'  make validate        Verify that the upstream port is present and the wrapper is consistent.' \
 		'  make all             Build the upstream Raspberry Pi port for Raspberry Pi Zero defaults.' \
-		'  make stage-sdcard    Copy build/config.txt and build/firmware.img, then download bootcode.bin and start.elf into build/sdcard/.' \
+		'  make stage-sdcard    Copy build/config.txt and build/firmware.img, enable UART, then download bootcode.bin, fixup.dat, and start.elf into build/sdcard/.' \
 		'  make release         Create a raw disk image containing the staged sdcard boot files.' \
 		'  make clean           Remove wrapper staging, upstream build output, and vendor/micropython.' \
 		'  make distclean       Alias for clean.' \
@@ -146,10 +147,20 @@ stage-sdcard: upstream-build
 	@mkdir -p "$(SDCARD_DIR)"
 	@cp "$(PORT_DIR)/build/config.txt" "$(SDCARD_DIR)/config.txt"
 	@cp "$(PORT_DIR)/build/firmware.img" "$(SDCARD_DIR)/firmware.img"
+	@if grep -qx 'enable_uart=1' "$(SDCARD_DIR)/config.txt"; then \
+		printf '%s\n' "Using existing UART setting in $(SDCARD_DIR)/config.txt"; \
+	else \
+		printf '\nenable_uart=1\n' >> "$(SDCARD_DIR)/config.txt"; \
+	fi
 	@if [ -f "$(SDCARD_DIR)/bootcode.bin" ]; then \
 		printf '%s\n' "Using existing $(SDCARD_DIR)/bootcode.bin"; \
 	else \
 		curl -fL "$(RPI_FIRMWARE_BOOTCODE_URL)" -o "$(SDCARD_DIR)/bootcode.bin"; \
+	fi
+	@if [ -f "$(SDCARD_DIR)/fixup.dat" ]; then \
+		printf '%s\n' "Using existing $(SDCARD_DIR)/fixup.dat"; \
+	else \
+		curl -fL "$(RPI_FIRMWARE_FIXUP_URL)" -o "$(SDCARD_DIR)/fixup.dat"; \
 	fi
 	@if [ -f "$(SDCARD_DIR)/start.elf" ]; then \
 		printf '%s\n' "Using existing $(SDCARD_DIR)/start.elf"; \

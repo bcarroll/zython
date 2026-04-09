@@ -43,6 +43,7 @@ class MakeFat16ImageTests(unittest.TestCase):
             (source_dir / "config.txt").write_text("kernel=firmware.img\n", encoding="ascii")
             (source_dir / "firmware.img").write_bytes(b"firmware")
             (source_dir / "bootcode.bin").write_bytes(b"bootcode")
+            (source_dir / "fixup.dat").write_bytes(b"fixup")
             output_path = Path(temp_dir) / "release.img"
 
             create_image(source_dir, output_path, 16, "RPI_MICROPY")
@@ -62,6 +63,7 @@ class MakeFat16ImageTests(unittest.TestCase):
         self.assertIn(b"CONFIG  TXT", root_names)
         self.assertIn(b"FIRMWAREIMG", root_names)
         self.assertIn(b"BOOTCODEBIN", root_names)
+        self.assertIn(b"FIXUP   DAT", root_names)
 
     def test_create_image_generates_short_alias_for_long_names(self) -> None:
         """Create one image with a long filename and confirm it is aliased."""
