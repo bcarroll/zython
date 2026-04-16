@@ -10,17 +10,13 @@ RELEASE_IMAGE_SIZE_MB ?= 64
 RELEASE_VOLUME_LABEL ?= RPI_MICROPY
 PATCH_DIR ?= $(PROJECT_DIR)/patches/upstream-micropython
 UPSTREAM_GIT_URL ?= https://github.com/boochow/micropython-raspberrypi.git
+UPSTREAM_MICROPYTHON_REF ?= 1f601e89878b2c60a9b193a7a9d7e47a7627c869
 RPI_FIRMWARE_BOOTCODE_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/bootcode.bin
 RPI_FIRMWARE_FIXUP_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/fixup.dat
 RPI_FIRMWARE_START_URL ?= https://raw.githubusercontent.com/raspberrypi/firmware/master/boot/start.elf
 
 UPSTREAM_PATCHES := \
-	0001-raspberrypi-fix-gcc-13-build-flags.patch \
-	0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch \
-	0003-raspberrypi-add-perf-profile-and-frozen-boot.patch
-
-NESTED_UPSTREAM_PATCHES := \
-	0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch
+	0001-raspberrypi-refresh-port-for-latest-micropython.patch
 
 BOARD ?= RPI1
 PERF ?= 1
@@ -40,6 +36,7 @@ help:
 		'' \
 		'Targets:' \
 		'  make bootstrap-upstream Clone vendor/micropython and initialize the upstream submodules.' \
+		'                         Then retarget the nested micropython checkout to $(UPSTREAM_MICROPYTHON_REF).' \
 		'  make apply-upstream-patches Apply this repo'"'"'s local upstream patch series if needed.' \
 		'  make validate        Verify that the upstream port is present and the wrapper is consistent.' \
 		'  make all             Build the upstream Raspberry Pi port for Raspberry Pi Zero defaults.' \
@@ -86,6 +83,12 @@ bootstrap-submodules: bootstrap-upstream
 	else \
 		git -C "$(UPSTREAM_DIR)" submodule update --init raspberrypi/csud; \
 	fi
+	@if [ "$$(git -C "$(UPSTREAM_MICROPYTHON_DIR)" rev-parse HEAD)" = "$(UPSTREAM_MICROPYTHON_REF)" ]; then \
+		printf '%s\n' "Nested MicroPython checkout already at $(UPSTREAM_MICROPYTHON_REF)"; \
+	else \
+		git -C "$(UPSTREAM_MICROPYTHON_DIR)" fetch origin master; \
+		git -C "$(UPSTREAM_MICROPYTHON_DIR)" checkout --detach "$(UPSTREAM_MICROPYTHON_REF)"; \
+	fi
 	@if [ -f "$(UPSTREAM_MICROPYTHON_DIR)/lib/axtls/README.md" ] && [ -f "$(UPSTREAM_MICROPYTHON_DIR)/lib/stm32lib/README.md" ]; then \
 		printf '%s\n' "Nested MicroPython submodules already initialized."; \
 	else \
@@ -94,40 +97,15 @@ bootstrap-submodules: bootstrap-upstream
 
 apply-upstream-patches: bootstrap-submodules
 	@set -eu; \
-	if grep -Fq 'QSTR_GEN_EXTRA_CFLAGS += -mgeneral-regs-only' "$(UPSTREAM_DIR)/raspberrypi/Makefile" && \
-		grep -Fq '$(BUILD)/py/stackctrl.o: CFLAGS += -Wno-error=dangling-pointer' "$(UPSTREAM_DIR)/raspberrypi/Makefile" && \
-		! grep -Fq '#include "arm_exceptions.h"' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h" && \
-		grep -Fq 'bic r0, r0, #0x80' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h" && \
-		grep -Fq 'orr r0, r0, #0x80' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h"; then \
-		printf '%s\n' 'Patch already applied: 0001-raspberrypi-fix-gcc-13-build-flags.patch'; \
+	if grep -Fq 'FROZEN_MANIFEST ?= manifest.py' "$(UPSTREAM_DIR)/raspberrypi/Makefile" && \
+		grep -Fq 'MICROPY_PY_TIME             (1)' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h" && \
+		grep -Fq 'MP_DEFINE_CONST_OBJ_TYPE(' "$(UPSTREAM_DIR)/raspberrypi/machine_pin.c" && \
+		grep -Fq 'mp_os_dupterm_obj' "$(UPSTREAM_DIR)/raspberrypi/moduos.c" && \
+		[ -f "$(UPSTREAM_DIR)/raspberrypi/manifest.py" ]; then \
+		printf '%s\n' 'Patch already applied: 0001-raspberrypi-refresh-port-for-latest-micropython.patch'; \
 	else \
-		printf '%s\n' 'Applying patch: 0001-raspberrypi-fix-gcc-13-build-flags.patch'; \
-		git -C "$(UPSTREAM_DIR)" apply "$(PATCH_DIR)/0001-raspberrypi-fix-gcc-13-build-flags.patch"; \
-	fi; \
-	if grep -Fq 'interrupt("FIQ")' "$(UPSTREAM_DIR)/raspberrypi/arm_ex_handler_weak.c" && \
-		grep -Fxq '    hcd_globals_t *hcd_globals;' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h"; then \
-		printf '%s\n' 'Patch already applied: 0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch'; \
-	else \
-		printf '%s\n' 'Applying patch: 0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch'; \
-		git -C "$(UPSTREAM_DIR)" apply "$(PATCH_DIR)/0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch"; \
-	fi; \
-	if grep -Fq 'FROZEN_MPY_DIR ?= fs' "$(UPSTREAM_DIR)/raspberrypi/Makefile" && \
-		grep -Fq 'CFLAGS += -DMICROPY_BOOT_FROZEN_MPY=' "$(UPSTREAM_DIR)/raspberrypi/Makefile" && \
-		grep -Fq 'pyexec_file_if_exists' "$(UPSTREAM_DIR)/raspberrypi/main.c" && \
-		grep -Fq 'MICROPY_BOOT_FROZEN_MPY (0)' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.h" && \
-		grep -Fq 'MICROPY_BOOT_FROZEN_MPY ?=0' "$(UPSTREAM_DIR)/raspberrypi/mpconfigport.mk" && \
-		grep -Fq 'Q(boot.py)' "$(UPSTREAM_DIR)/raspberrypi/qstrdefsport.h"; then \
-		printf '%s\n' 'Patch already applied: 0003-raspberrypi-add-perf-profile-and-frozen-boot.patch'; \
-	else \
-		printf '%s\n' 'Applying patch: 0003-raspberrypi-add-perf-profile-and-frozen-boot.patch'; \
-		git -C "$(UPSTREAM_DIR)" apply "$(PATCH_DIR)/0003-raspberrypi-add-perf-profile-and-frozen-boot.patch"; \
-	fi; \
-	if grep -Fq -- '-Wno-error=dangling-pointer' "$(UPSTREAM_MICROPYTHON_DIR)/mpy-cross/Makefile" && \
-		grep -Fq 'mp_import_stat_t mp_import_stat' "$(UPSTREAM_MICROPYTHON_DIR)/mpy-cross/main.c"; then \
-		printf '%s\n' 'Patch already applied: 0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch'; \
-	else \
-		printf '%s\n' 'Applying patch: 0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch'; \
-		git -C "$(UPSTREAM_MICROPYTHON_DIR)" apply "$(PATCH_DIR)/0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch"; \
+		printf '%s\n' 'Applying patch: 0001-raspberrypi-refresh-port-for-latest-micropython.patch'; \
+		git -C "$(UPSTREAM_DIR)" apply "$(PATCH_DIR)/0001-raspberrypi-refresh-port-for-latest-micropython.patch"; \
 	fi
 
 upstream-ready: apply-upstream-patches

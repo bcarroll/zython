@@ -24,7 +24,7 @@ make release
 
 What those targets do:
 
-- `make all`: clones `vendor/micropython` if needed, initializes pinned submodules, applies the local patch series, and builds the firmware
+- `make all`: clones `vendor/micropython` if needed, initializes BooChow's submodules, retargets the nested `micropython` checkout to the pinned official upstream revision, applies the local port patch, and builds the firmware
 - `make stage-sdcard`: writes boot files to `build/sdcard/`, adds `enable_uart=1` plus conservative HDMI settings to `config.txt`, and stages the matching Raspberry Pi firmware blobs
 - `make release`: creates `build/zython.img`
 - `make clean`: removes `build/` and deletes `vendor/micropython`
@@ -58,7 +58,7 @@ The runtime is bare-metal after the Raspberry Pi firmware loads `firmware.img`; 
 ## Notes
 
 - `vendor/micropython` is a generated checkout and is ignored by `.gitignore`
-- the nested `micropython` submodule is checked out to the commit pinned by `boochow/micropython-raspberrypi`, not the latest upstream `HEAD`
+- the nested `micropython` submodule is advanced to the pinned official upstream commit `1f601e89878b2c60a9b193a7a9d7e47a7627c869`
 - local upstream-facing changes are captured in `patches/upstream-micropython/`
 - default wrapper settings are `BOARD=RPI1 PERF=1 MICROPY_HW_USBHOST=0 MICROPY_MOUNT_SD_CARD=1 MICROPY_MOUNT_FIRST_PARTITION_ONLY=1 MICROPY_BOOT_FROZEN_MPY=1`
 - `make stage-sdcard` appends `enable_uart=1` to the staged `config.txt` so the serial console is exposed on the Pi Zero UART pins

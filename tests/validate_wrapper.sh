@@ -12,10 +12,7 @@ tools/make_fat16_image.py
 tests/test_make_fat16_image.py
 vendor/README.md
 vendor/micropython/README.md
-patches/upstream-micropython/0001-raspberrypi-fix-gcc-13-build-flags.patch
-patches/upstream-micropython/0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch
-patches/upstream-micropython/0003-raspberrypi-add-perf-profile-and-frozen-boot.patch
-patches/upstream-micropython/0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch
+patches/upstream-micropython/0001-raspberrypi-refresh-port-for-latest-micropython.patch
 vendor/micropython/raspberrypi/Makefile
 vendor/micropython/raspberrypi/main.c
 vendor/micropython/raspberrypi/mpconfigport.h
@@ -37,15 +34,17 @@ grep -q 'MICROPY_MOUNT_SD_CARD ?= 1' "$project_dir/Makefile"
 grep -q 'MICROPY_MOUNT_FIRST_PARTITION_ONLY ?= 1' "$project_dir/Makefile"
 grep -q 'MICROPY_BOOT_FROZEN_MPY ?= 1' "$project_dir/Makefile"
 grep -q 'UPSTREAM_GIT_URL ?= https://github.com/boochow/micropython-raspberrypi.git' "$project_dir/Makefile"
+grep -q 'UPSTREAM_MICROPYTHON_REF ?= 1f601e89878b2c60a9b193a7a9d7e47a7627c869' "$project_dir/Makefile"
 grep -q 'bootstrap-upstream' "$project_dir/Makefile"
 grep -q 'apply-upstream-patches' "$project_dir/Makefile"
 grep -q '^release:' "$project_dir/Makefile"
 grep -q 'make_fat16_image.py' "$project_dir/Makefile"
 grep -q 'git clone "\$(UPSTREAM_GIT_URL)" "\$(UPSTREAM_DIR)"' "$project_dir/Makefile"
 grep -q 'git -C "\$(UPSTREAM_DIR)" submodule update --init' "$project_dir/Makefile"
+grep -q 'git -C "\$(UPSTREAM_MICROPYTHON_DIR)" fetch origin master' "$project_dir/Makefile"
+grep -q 'git -C "\$(UPSTREAM_MICROPYTHON_DIR)" checkout --detach "\$(UPSTREAM_MICROPYTHON_REF)"' "$project_dir/Makefile"
 grep -q 'git -C "\$(UPSTREAM_MICROPYTHON_DIR)" submodule update --init' "$project_dir/Makefile"
 grep -q 'git -C "\$(UPSTREAM_DIR)" apply' "$project_dir/Makefile"
-grep -q 'git -C "\$(UPSTREAM_MICROPYTHON_DIR)" apply' "$project_dir/Makefile"
 grep -q 'bootcode.bin' "$project_dir/Makefile"
 grep -q 'fixup.dat' "$project_dir/Makefile"
 grep -q 'start.elf' "$project_dir/Makefile"
@@ -56,6 +55,7 @@ grep -q 'hdmi_mode=4' "$project_dir/Makefile"
 grep -q 'disable_overscan=1' "$project_dir/Makefile"
 grep -q 'zython.img' "$project_dir/README.md"
 grep -q 'raspberrypi' "$project_dir/vendor/README.md"
+grep -q '1f601e89878b2c60a9b193a7a9d7e47a7627c869' "$project_dir/README.md"
 test -d "$port_dir/fs"
 
 printf '%s\n' 'Wrapper validation passed.'

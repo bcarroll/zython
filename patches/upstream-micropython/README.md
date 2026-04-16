@@ -7,25 +7,15 @@ Base tree used when generating them:
 
 ```text
 vendor/micropython @ 0fb6bf7
+vendor/micropython/micropython @ 1f601e89878b2c60a9b193a7a9d7e47a7627c869
 ```
 
 Patch order:
 
-1. `0001-raspberrypi-fix-gcc-13-build-flags.patch`
-2. `0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch`
-3. `0003-raspberrypi-add-perf-profile-and-frozen-boot.patch`
-4. `0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch`
+1. `0001-raspberrypi-refresh-port-for-latest-micropython.patch`
 
-Apply patches `0001` through `0003` from the `vendor/micropython` repository root:
+Apply the patch from the `vendor/micropython` repository root:
 
 ```sh
-git apply ../../patches/upstream-micropython/0001-raspberrypi-fix-gcc-13-build-flags.patch
-git apply ../../patches/upstream-micropython/0002-raspberrypi-fix-fiq-attribute-and-root-pointers.patch
-git apply ../../patches/upstream-micropython/0003-raspberrypi-add-perf-profile-and-frozen-boot.patch
-```
-
-Apply patch `0004` from the nested `vendor/micropython/micropython` repository root:
-
-```sh
-git apply ../../../patches/upstream-micropython/0004-mpy-cross-fix-gcc-13-for-frozen-mpy-builds.patch
+git apply ../../patches/upstream-micropython/0001-raspberrypi-refresh-port-for-latest-micropython.patch
 ```
